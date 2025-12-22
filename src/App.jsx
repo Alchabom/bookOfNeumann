@@ -27,16 +27,49 @@ export default function NeumannPhotobook() {
     { id: 'nature', name: 'Nature'}
   ];
 
-  
-
-  const [photos,setPhotos] = useState([
+  const defaultPhotos = [
     { id: 1, category: 'sleepy', desc: 'Flashed', image: sleeping1},
     { id: 2, category: 'playing', desc: 'Ready to pounce', image: playing1},
     { id: 3, category: 'eating', desc: 'Chunker', image: eating1},
     { id: 4, category: 'nature', desc: 'Window watching', image: nature1},
     { id: 5, category: 'sleepy', desc: 'The slightest movement will disturb', image: sleeping2},
     { id: 6, category: 'playing', desc: 'Pounce attack!', image: playing2},
-  ]);
+  ];
+
+  const [photos,setPhotos] = useState(defaultPhotos);
+
+  useEffect(() => {
+    const fetchAzurePhotos = async () => {
+      try {
+        const accountName = import.meta.env.VITE_AZURE_STORAGE_ACCOUNT_NAME;
+        const containerName = import.meta.env.VITE_AZURE_CONTAINER_NAME;
+        const sasToken = import.meta.env.VITE_AZURE_STORAGE_SAS_TOKEN;
+
+        const blobServiceClient = new BlobServiceClient(
+          `https://${accountName}.blob.core.windows.net${sasToken}`
+        );
+
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+        const azurePhotos = [];
+
+        for await (const blob of containerClient.listBlobsFlat()) {
+          const imageUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blob.name}`;
+
+          azurePhotos.push({
+            id: blob.name,
+            category: 'all',
+            desc: 'Uploaded Memory',
+            image: imageUrl
+          });
+        }
+        setPhotos([...defaultPhotos, ...azurePhotos]);
+      } catch (error) {
+        console.error("Error fetching azure photos:", error);
+      }
+    };
+    fetchAzurePhotos();
+  }, []);
+
 
   const filteredPhotos = selectedCategory === 'all' 
     ? photos 
