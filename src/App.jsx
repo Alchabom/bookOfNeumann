@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import './App.css';
 import playing1 from './images/playing1.jpg';
@@ -7,6 +7,9 @@ import eating1 from './images/eating1.jpg';
 import nature1 from './images/nature1.jpg';
 import sleeping1 from './images/sleeping1.jpg';
 import sleeping2 from './images/sleeping2.jpg';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { Upload } from 'lucide-react';
+
 
 export default function NeumannPhotobook() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +17,7 @@ export default function NeumannPhotobook() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isFlipping, setIsFlipping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const categories = [
     { id: 'all', name: 'All Adventures'},
@@ -23,20 +27,22 @@ export default function NeumannPhotobook() {
     { id: 'nature', name: 'Nature'}
   ];
 
-  const photos = [
+  
+
+  const [photos,setPhotos] = useState([
     { id: 1, category: 'sleepy', desc: 'Flashed', image: sleeping1},
     { id: 2, category: 'playing', desc: 'Ready to pounce', image: playing1},
     { id: 3, category: 'eating', desc: 'Chunker', image: eating1},
     { id: 4, category: 'nature', desc: 'Window watching', image: nature1},
     { id: 5, category: 'sleepy', desc: 'The slightest movement will disturb', image: sleeping2},
     { id: 6, category: 'playing', desc: 'Pounce attack!', image: playing2},
-  ];
+  ]);
 
   const filteredPhotos = selectedCategory === 'all' 
     ? photos 
     : photos.filter(p => p.category === selectedCategory);
 
-  const photosPerPage = 4;
+  const photosPerPage = 16;
   const totalPages = Math.ceil(filteredPhotos.length / photosPerPage);
   const currentPhotos = filteredPhotos.slice(
     currentPage * photosPerPage,
@@ -81,6 +87,52 @@ export default function NeumannPhotobook() {
       setSelectedCategory('all');
     }, 800);
   };
+
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+
+    if (!file) return; 
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    setIsUploading(true);
+
+    try {
+      const timestamp = Date.now();
+      const uniqueFileName = `neumann_${timestamp}_${file.name}`;
+
+      const accountName = import.meta.env.VITE_AZURE_STORAGE_ACCOUNT_NAME;
+      const sasToken = import.meta.env.VITE_AZURE_STORAGE_SAS_TOKEN;
+      const containerName = import.meta.env.VITE_AZURE_CONTAINER_NAME;
+
+      const blobServiceClient = new BlobServiceClient(`https://${accountName}.blob.core.windows.net${sasToken}`);
+
+      const containerClient = blobServiceClient.getContainerClient(containerName);
+
+      const blobClient = containerClient.getBlockBlobClient(uniqueFileName);
+      await blobClient.uploadData(file, {blobHTTPHeaders: {blobContentType: file.type}});
+
+      const imageUrl = blobClient.url.split('?')[0];
+
+      const newPhoto = {
+        id: timestamp,
+        category: 'all',
+        desc: 'Uploaded photo',
+        image: imageUrl
+      };
+      setPhotos([...photos, newPhoto]);
+      alert ('Photo uploaded successfully!');
+    } catch (error) {
+      console.error('Upload error: ', error);
+      alert('Failed to upload photo, check console.');
+    } finally {
+      setIsUploading(false);
+      event.target.value = '';
+    }
+  };
+
 
   // CLOSED STATE - Book Cover
   if (!isOpen) {
@@ -145,6 +197,37 @@ export default function NeumannPhotobook() {
                 </button>
               ))}
             </div>
+            <div className = "chapters-box" style= {{marginTop: '1rem'}}>
+              <h3 className="chapters-title">Add Photos</h3>
+              <input
+                  type="file"
+                  id="file-upload"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  style={{display: 'none'}}
+                />
+                <label
+                  htmlFor="file-upload"
+                  className={`category-button ${isUploading ? 'disabled' : ''}`}
+                  style={{
+                    cursor: isUploading ? 'not-allowed' : 'pointer',
+                    opacity: isUploading ? 0.6 : 1,
+                    justifyContent: 'center'
+                  }}
+                  >
+                    {isUploading ? (
+                      <>
+                      <span className="category-emoji">⏳</span>
+                      <span>Uploading...</span>
+                      </>
+                    ): (
+                      <>
+                        <span className="category-emoji">📸</span>
+                        <span>Upload Photo</span>
+                      </>
+                    )}
+                  </label>
+          </div>
           </div>
 
           <div className="book-pages-area">
