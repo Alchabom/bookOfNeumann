@@ -115,4 +115,6 @@ Categories and descriptions are stored as blob metadata for efficient retrieval 
 - [ ] Additional categories based on common tags
 - [ ] User authentication
 
+# Live Demo
+Check it out here at https://ambitious-hill-05dc6690f.6.azurestaticapps.net ! 
 *Built as a full-stack demonstration of serverless architecture and AI integration*
