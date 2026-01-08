@@ -50,3 +50,6 @@ jobs:
         env:
           # This forces Oryx to use the correct Node version during the build
           EXTRA_NODE_VERSION: 22
+          VITE_AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.VITE_AZURE_STORAGE_ACCOUNT_NAME }}
+          VITE_AZURE_CONTAINER_NAME: ${{ secrets.VITE_AZURE_CONTAINER_NAME }}
+          VITE_AZURE_STORAGE_SAS_TOKEN: ${{ secrets.VITE_AZURE_STORAGE_SAS_TOKEN }}
