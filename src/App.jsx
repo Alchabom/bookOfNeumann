@@ -159,7 +159,7 @@ export default function NeumannPhotobook() {
       const blobClient = containerClient.getBlockBlobClient(uniqueFileName);
       await blobClient.uploadData(file, {blobHTTPHeaders: {blobContentType: file.type}});
 
-
+        //helo
    
     alert('Photo uploaded! It will be categorized in a moment. Refresh the page to see it.');
     } catch (error) {
