@@ -11,6 +11,7 @@ import { BlobServiceClient } from '@azure/storage-blob';
 import { Upload } from 'lucide-react';
 
 
+
 export default function NeumannPhotobook() {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -50,25 +51,36 @@ export default function NeumannPhotobook() {
         );
 
         const containerClient = blobServiceClient.getContainerClient(containerName);
+
         const azurePhotos = [];
 
         for await (const blob of containerClient.listBlobsFlat()) {
-          const imageUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blob.name}`;
+        const imageUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blob.name}`;
 
-          azurePhotos.push({
-            id: blob.name,
-            category: 'all',
-            desc: 'Uploaded Memory',
-            image: imageUrl
-          });
-        }
-        setPhotos([...defaultPhotos, ...azurePhotos]);
-      } catch (error) {
-        console.error("Error fetching azure photos:", error);
+        const blobClient = containerClient.getBlobClient(blob.name);
+        
+        const properties = await blobClient.getProperties();
+        
+        const metadata = properties.metadata || {};
+        const category = metadata.category || 'all';
+        const description = metadata.description || 'Uploaded Memory';
+
+        console.log(`Blob: ${blob.name}, Category: ${category}, Desc: ${description}`);
+
+        azurePhotos.push({
+          id: blob.name,
+          category: category,  
+          desc: description,   
+          image: imageUrl
+        });
       }
-    };
-    fetchAzurePhotos();
-  }, []);
+      setPhotos([...defaultPhotos, ...azurePhotos]);
+    } catch (error) {
+      console.error("Error fetching azure photos:", error);
+    }
+  };
+  fetchAzurePhotos();
+}, []); 
 
 
   const filteredPhotos = selectedCategory === 'all' 
@@ -147,16 +159,9 @@ export default function NeumannPhotobook() {
       const blobClient = containerClient.getBlockBlobClient(uniqueFileName);
       await blobClient.uploadData(file, {blobHTTPHeaders: {blobContentType: file.type}});
 
-      const imageUrl = blobClient.url.split('?')[0];
 
-      const newPhoto = {
-        id: timestamp,
-        category: 'all',
-        desc: 'Uploaded photo',
-        image: imageUrl
-      };
-      setPhotos([...photos, newPhoto]);
-      alert ('Photo uploaded successfully!');
+   
+    alert('Photo uploaded! It will be categorized in a moment. Refresh the page to see it.');
     } catch (error) {
       console.error('Upload error: ', error);
       alert('Failed to upload photo, check console.');
