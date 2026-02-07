@@ -187,7 +187,7 @@ export default function NeumannPhotobook() {
               </h1>
               <div style={{ width: '80px', height: '2px', background: '#d4af37', margin: '1.5rem 0', opacity: 0.6 }}></div>
               <p className="book-cover-subtitle">
-                A Collection of<br/>Feline Memories
+                Neumann Computer Vision Categorization<br/>Omar Alchab
               </p>
               <div style={{ fontSize: '1.5rem', marginTop: '1rem', opacity: 0.6 }}>❧</div>
               <p className="book-cover-hint">Click to open</p>
